@@ -1,9 +1,12 @@
 import { createRequire } from "module";
 import { useMultiFileAuthState, fetchLatestBaileysVersion, makeWASocket, DisconnectReason } from "@whiskeysockets/baileys";
+import { prisma } from "./utils/prisma.js";
 const require = createRequire(import.meta.url);
 const qrcode = require("qrcode-terminal");
 
 async function startSock() {
+  const user = prisma.user.findFirst();
+  console.log("User dari database:", await user);
   const { state, saveCreds } = await useMultiFileAuthState("auth");
   const { version } = await fetchLatestBaileysVersion();
 
