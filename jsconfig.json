@@ -14,6 +14,6 @@
     },
     "ignoreDeprecations": "6.0"
   },
-  "include": ["src/**/*", "prisma/**/*", "index.js"],
-  "exclude": ["node_modules", "dist"]
+  "include": ["src/**/*", "prisma/**/*"],
+  "exclude": ["node_modules", "dist", "generated"]
 }
