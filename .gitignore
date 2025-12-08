@@ -17,6 +17,9 @@ build/
 prisma/dev.db
 prisma/migrations/
 prisma/seed.ts
+src/generated/
+prisma/.env
+prisma/schema.prisma.bak
 
 # IDE / Editor
 .vscode/
