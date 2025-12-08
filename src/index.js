@@ -47,10 +47,10 @@ async function startSock() {
       // Log semua pesan yang diterima
       console.log(`[DEBUG] Pesan masuk dari ${from}:`, text);
 
-      if (text && text.toLowerCase().includes("berapa")) {
+      if (text && text.toLowerCase().includes("halo")) {
         console.log(`Pesan dari ${from}: ${text}`);
         await sock.sendMessage(from, {
-          text: "Oke, tunggu kak. Akan segera kami info.",
+          text: "Halo! Ada yang bisa saya bantu?",
         });
       }
     }
