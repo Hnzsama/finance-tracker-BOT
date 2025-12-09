@@ -119,7 +119,7 @@ Silakan buka **issue** terlebih dahulu sebelum mengirimkan PR.
 ## 👤 Pengembang
 
 * ❤️ **Hnzsama** — [https://github.com/Hnzsama](https://github.com/Hnzsama)
-* 🤝 **Tegar Swastiawan** — [https://github.com/tegarsw21](https://github.com/tegarsw21)
+* 🤝 **tegarsw21** — [https://github.com/tegarsw21](https://github.com/tegarsw21)
 
 ---
 
