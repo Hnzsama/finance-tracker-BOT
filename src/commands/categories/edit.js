@@ -1,17 +1,18 @@
 import { prisma } from "../../utils/prisma.js";
-import { getUserByWhatsapp } from "../../utils/user.js";
+import { getUserByWhatsapp, getSender } from "../../utils/user.js";
 
 export default {
     name: "edit-cat",
     matches: (text) => text.startsWith("$edit-cat"),
     execute: async (sock, message, text) => {
-        const from = message.key.remoteJid;
-        const whatsappNumber = from.replace("@s.whatsapp.net", "");
+        const chatId = message.key.remoteJid;
+        const sender = getSender(message);
+        const whatsappNumber = sender.replace("@s.whatsapp.net", "");
 
         try {
             const user = await getUserByWhatsapp(whatsappNumber);
             if (!user) {
-                return sock.sendMessage(from, { text: "⚠️ Kamu belum terdaftar. Ketik $register <nama> dulu ya!" });
+                return sock.sendMessage(chatId, { text: "⚠️ Kamu belum terdaftar. Ketik $register <nama> dulu ya!" });
             }
 
             const rawInput = text.replace("$edit-cat", "").trim();
@@ -19,7 +20,7 @@ export default {
             const parts = rawInput.split("->");
 
             if (parts.length !== 2) {
-                return sock.sendMessage(from, { text: "⚠️ Format salah. Contoh: $edit-cat Makanan -> Kebutuhan Pokok" });
+                return sock.sendMessage(chatId, { text: "⚠️ Format: $edit-cat <lama> -> <baru>" });
             }
 
             const oldName = parts[0].trim();
@@ -33,7 +34,7 @@ export default {
             });
 
             if (!oldCat) {
-                return sock.sendMessage(from, { text: `⚠️ Kategori '${oldName}' tidak ditemukan.` });
+                return sock.sendMessage(chatId, { text: `⚠️ Kategori '${oldName}' tidak ditemukan.` });
             }
 
             // Check if new name is taken
@@ -42,7 +43,7 @@ export default {
             });
 
             if (newCatExists) {
-                return sock.sendMessage(from, { text: `⚠️ Kategori '${newName}' sudah ada.` });
+                return sock.sendMessage(chatId, { text: `⚠️ Kategori '${newName}' sudah ada.` });
             }
 
             await prisma.category.update({
@@ -50,18 +51,11 @@ export default {
                 data: { name: newName }
             });
 
-            await sock.sendMessage(from, {
-                text: `╭── [ *EDIT KATEGORI* ]
-│
-├ ✏️ *Dari:* ${oldName}
-├ ➡️ *Jadi:* ${newName}
-│
-╰ _Cek list: $list-cat_`
-            });
+            await sock.sendMessage(chatId, { text: `✅ Kategori diubah: ${oldName} -> ${newName}` });
 
         } catch (error) {
             console.error("Edit Cat Error:", error);
-            await sock.sendMessage(from, { text: "❌ Terjadi kesalahan saat mengedit kategori." });
+            await sock.sendMessage(chatId, { text: "❌ Gagal mengubah kategori." });
         }
     },
 };

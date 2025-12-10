@@ -1,30 +1,32 @@
 import { prisma } from "../../utils/prisma.js";
-import { getUserByWhatsapp } from "../../utils/user.js";
+import { getUserByWhatsapp, getSender } from "../../utils/user.js";
 import { downloadMediaMessage } from "@whiskeysockets/baileys";
 
 export default {
     name: "trx-smart",
     matches: (text) => text.startsWith("$trx"),
     execute: async (sock, message, text, { gemini }) => {
-        const from = message.key.remoteJid;
-        const whatsappNumber = from.replace("@s.whatsapp.net", "");
+        const chatId = message.key.remoteJid;
+        const sender = getSender(message);
+        const whatsappNumber = sender.replace("@s.whatsapp.net", "");
 
         try {
             const user = await getUserByWhatsapp(whatsappNumber);
             if (!user) {
-                return sock.sendMessage(from, { text: "⚠️ Kamu belum terdaftar. Ketik $register <nama> dulu ya!" });
+                return sock.sendMessage(chatId, { text: "⚠️ Kamu belum terdaftar. Ketik $register <nama> dulu ya!" });
             }
 
             const instruction = text.replace("$trx", "").trim();
 
             // Check for image
-            const isImage = message.message?.imageMessage;
+            const quoted = message.message?.extendedTextMessage?.contextInfo?.quotedMessage;
+            const isImage = message.message?.imageMessage || quoted?.imageMessage;
             if (!instruction && !isImage) {
-                return sock.sendMessage(from, { text: "⚠️ Kirim gambar struk atau tulis instruksi. Contoh: $trx Beli kopi 25k" });
+                return sock.sendMessage(chatId, { text: "⚠️ Kirim gambar struk atau tulis instruksi. Contoh: $trx Beli kopi 25k" });
             }
 
             // React Processing
-            await sock.sendMessage(from, { react: { text: "⏳", key: message.key } });
+            await sock.sendMessage(chatId, { react: { text: "⏳", key: message.key } });
 
             // 1. Get Categories
             const categories = await prisma.category.findMany({
@@ -39,16 +41,17 @@ export default {
 
             if (isImage) {
                 const buffer = await downloadMediaMessage(
-                    message,
+                    quoted?.imageMessage ? { message: quoted } : message,
                     'buffer',
                     {}
                 );
                 promptParts.push({
                     inlineData: {
                         data: buffer.toString("base64"),
-                        mimeType: "image/jpeg"
+                        mimeType: isImage.mimetype || "image/jpeg"
                     }
                 });
+                console.log(`[DEBUG] Image attached. Size: ${buffer.length}, Mime: ${isImage.mimetype}`);
             }
 
             // 2. Prompt Gemini
@@ -89,7 +92,7 @@ export default {
                 parsed = JSON.parse(strRes);
             } catch (e) {
                 console.error("AI Trx Parse Error:", strRes);
-                return sock.sendMessage(from, { text: "⚠️ Maaf, aku bingung. Coba kalimat lain ya." });
+                return sock.sendMessage(chatId, { text: "⚠️ Maaf, aku bingung. Coba kalimat lain ya." });
             }
 
             let successLog = "";
@@ -143,12 +146,12 @@ export default {
 ${successLog}│
 ╰ _Cek history: $list-trx_`;
 
-            await sock.sendMessage(from, { text: msg });
-            await sock.sendMessage(from, { react: { text: "✅", key: message.key } });
+            await sock.sendMessage(chatId, { text: msg });
+            await sock.sendMessage(chatId, { react: { text: "✅", key: message.key } });
 
         } catch (error) {
             console.error("Smart Trx Error:", error);
-            await sock.sendMessage(from, { text: "❌ Gagal mencatat transaksi." });
+            await sock.sendMessage(chatId, { text: "❌ Gagal mencatat transaksi." });
         }
     },
 };

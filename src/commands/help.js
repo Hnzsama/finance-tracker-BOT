@@ -1,9 +1,13 @@
+import { getSender } from "../utils/user.js";
+
 export default {
   name: "help",
   matches: (text) => text.toLowerCase().startsWith("$help"),
-  execute: async (sock, message, text) => {
-    const from = message.key.remoteJid;
-    const pushName = message.pushName || "User";
+  execute: async (sock, message) => {
+    const chatId = message.key.remoteJid;
+    const sender = getSender(message);
+    const name = message.pushName || "User";
+    const text = message.message?.conversation || message.message?.extendedTextMessage?.text || "";
     const args = text.split(" ").slice(1); // Get args after $help
     const subCommand = args[0] ? args[0].toLowerCase() : null;
 
@@ -28,7 +32,7 @@ export default {
   Lihat kode rahasia & link dashboard.
 
 _Ketik_ \`$help\` _untuk kembali ke menu utama._`;
-      return await sock.sendMessage(from, { text: msg });
+      return await sock.sendMessage(chatId, { text: msg });
     }
 
     // ============================================================
@@ -62,7 +66,7 @@ _Ketik_ \`$help\` _untuk kembali ke menu utama._`;
   Contoh: _"$edit-cat Makanan -> Kuliner"_
 
 _Ketik_ \`$help\` _untuk kembali ke menu utama._`;
-      return await sock.sendMessage(from, { text: msg });
+      return await sock.sendMessage(chatId, { text: msg });
     }
 
     // ============================================================
@@ -100,15 +104,16 @@ _Ketik_ \`$help\` _untuk kembali ke menu utama._`;
   Lihat 10 transaksi terakhir.
 
 _Ketik_ \`$help\` _untuk kembali ke menu utama._`;
-      return await sock.sendMessage(from, { text: msg });
+      return await sock.sendMessage(chatId, { text: msg });
     }
 
     // ============================================================
     // MENU UTAMA (DEFAULT)
     // ============================================================
-    const msg = `💸 *FINANCE TRACKER BOT*
-Halo, *${pushName}*! 👋
-Silahkan pilih kategori bantuan di bawah ini:
+    const msg = `Halo *${name}*! 👋
+Saya adalah *Finance Tracker Bot* yang siap bantuin catat keuanganmu.
+    
+Gunakan menu di bawah ini untuk memulai:
 
 ╭── [ 📌 *MENU BANTUAN* ]
 │
@@ -128,9 +133,9 @@ Developed by:
 👨‍💻 *Hnzsama* (github.com/Hnzsama)
 👨‍💻 *Tegar* (github.com/tegarsw21)`;
 
-    await sock.sendMessage(from, {
+    await sock.sendMessage(chatId, {
       text: msg,
-      mentions: [message.key.participant || message.key.remoteJid]
+      mentions: [sender]
     });
   },
 };

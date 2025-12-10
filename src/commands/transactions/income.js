@@ -1,5 +1,5 @@
 import { prisma } from "../../utils/prisma.js";
-import { getUserByWhatsapp } from "../../utils/user.js";
+import { getUserByWhatsapp, getSender } from "../../utils/user.js";
 
 function parseMoney(str) {
     // Remove Rp, dots, commas, spaces
@@ -11,21 +11,22 @@ export default {
     name: "inc",
     matches: (text) => text.startsWith("$inc"),
     execute: async (sock, message, text) => {
-        const from = message.key.remoteJid;
-        const whatsappNumber = from.replace("@s.whatsapp.net", "");
+        const chatId = message.key.remoteJid;
+        const sender = getSender(message);
+        const whatsappNumber = sender.replace("@s.whatsapp.net", "");
 
         try {
             const user = await getUserByWhatsapp(whatsappNumber);
             if (!user) {
-                return sock.sendMessage(from, { text: "⚠️ Kamu belum terdaftar. Ketik $register <nama> dulu ya!" });
+                return sock.sendMessage(chatId, { text: "⚠️ Kamu belum terdaftar. Ketik $register <nama> dulu ya!" });
             }
 
-            // Expected format: $masuk <amount> <category> <desc>
-            // Example: $masuk 100000 Gaji Bulan ini
+            // Expected format: $inc <amount> <category> <desc>
+            // Example: $inc 100000 Gaji Bulan ini
             const args = text.replace("$inc", "").trim().split(" ");
 
             if (args.length < 2) {
-                return sock.sendMessage(from, { text: "⚠️ Format salah. Contoh: $inc 5000000 Gaji Bonus Tahunan" });
+                return sock.sendMessage(chatId, { text: "⚠️ Format salah. Contoh: $inc 5000000 Gaji Bonus Tahunan" });
             }
 
             const amountStr = args[0];
@@ -34,7 +35,7 @@ export default {
             const amount = parseMoney(amountStr);
 
             if (amount <= 0) {
-                return sock.sendMessage(from, { text: "⚠️ Nominal tidak valid." });
+                return sock.sendMessage(chatId, { text: "⚠️ Nominal tidak valid." });
             }
 
             // Find category (Exact match preferred, or handle if not exists? User should use existing)
@@ -44,7 +45,7 @@ export default {
             });
 
             if (!category) {
-                return sock.sendMessage(from, { text: `⚠️ Kategori '${categoryName}' tidak ditemukan. Cek $list-cat` });
+                return sock.sendMessage(chatId, { text: `⚠️ Kategori '${categoryName}' tidak ditemukan. Cek $list-cat` });
             }
 
             const trx = await prisma.transaction.create({
@@ -59,7 +60,7 @@ export default {
 
             const formattedAmount = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(amount);
 
-            await sock.sendMessage(from, {
+            await sock.sendMessage(chatId, {
                 text: `╭── [ *PEMASUKAN (INC) TERCATAT* ]
 │
 ├ 💰 *Nominal:* ${formattedAmount}
@@ -71,7 +72,7 @@ export default {
 
         } catch (error) {
             console.error("Income Error:", error);
-            await sock.sendMessage(from, { text: "❌ Terjadi kesalahan saat mencatat pemasukan." });
+            await sock.sendMessage(chatId, { text: "❌ Terjadi kesalahan saat mencatat pemasukan." });
         }
     },
 };

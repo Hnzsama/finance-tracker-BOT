@@ -1,5 +1,5 @@
 import { prisma } from "../../utils/prisma.js";
-import { getUserByWhatsapp } from "../../utils/user.js";
+import { getUserByWhatsapp, getSender } from "../../utils/user.js";
 
 function parseMoney(str) {
     const clean = str.replace(/[^0-9]/g, "");
@@ -10,20 +10,21 @@ export default {
     name: "exp",
     matches: (text) => text.startsWith("$exp"),
     execute: async (sock, message, text) => {
-        const from = message.key.remoteJid;
-        const whatsappNumber = from.replace("@s.whatsapp.net", "");
+        const chatId = message.key.remoteJid;
+        const sender = getSender(message);
+        const whatsappNumber = sender.replace("@s.whatsapp.net", "");
 
         try {
             const user = await getUserByWhatsapp(whatsappNumber);
             if (!user) {
-                return sock.sendMessage(from, { text: "⚠️ Kamu belum terdaftar. Ketik $register <nama> dulu ya!" });
+                return sock.sendMessage(chatId, { text: "⚠️ Kamu belum terdaftar. Ketik $register <nama> dulu ya!" });
             }
 
             // Example: $keluar 20000 Makan Nasi Goreng
             const args = text.replace("$exp", "").trim().split(" ");
 
             if (args.length < 2) {
-                return sock.sendMessage(from, { text: "⚠️ Format salah. Contoh: $exp 20000 Makan Nasi Padang" });
+                return sock.sendMessage(chatId, { text: "⚠️ Format salah. Contoh: $exp 20000 Makan Nasi Padang" });
             }
 
             const amountStr = args[0];
@@ -32,7 +33,7 @@ export default {
             const amount = parseMoney(amountStr);
 
             if (amount <= 0) {
-                return sock.sendMessage(from, { text: "⚠️ Nominal tidak valid." });
+                return sock.sendMessage(chatId, { text: "⚠️ Nominal tidak valid." });
             }
 
             const category = await prisma.category.findUnique({
@@ -40,7 +41,7 @@ export default {
             });
 
             if (!category) {
-                return sock.sendMessage(from, { text: `⚠️ Kategori '${categoryName}' tidak ditemukan. Cek $list-cat` });
+                return sock.sendMessage(chatId, { text: `⚠️ Kategori '${categoryName}' tidak ditemukan. Cek $list-cat` });
             }
 
             await prisma.transaction.create({
@@ -55,7 +56,7 @@ export default {
 
             const formattedAmount = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(amount);
 
-            await sock.sendMessage(from, {
+            await sock.sendMessage(chatId, {
                 text: `╭── [ *PENGELUARAN (EXP) TERCATAT* ]
 │
 ├ 💸 *Nominal:* ${formattedAmount}
@@ -67,7 +68,7 @@ export default {
 
         } catch (error) {
             console.error("Expense Error:", error);
-            await sock.sendMessage(from, { text: "❌ Terjadi kesalahan saat mencatat pengeluaran." });
+            await sock.sendMessage(chatId, { text: "❌ Terjadi kesalahan saat mencatat pengeluaran." });
         }
     },
 };

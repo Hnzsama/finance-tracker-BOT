@@ -1,17 +1,18 @@
 import { prisma } from "../../utils/prisma.js";
-import { getUserByWhatsapp } from "../../utils/user.js";
+import { getUserByWhatsapp, getSender } from "../../utils/user.js";
 
 export default {
     name: "list-trx",
     matches: (text) => text.startsWith("$list-trx"),
     execute: async (sock, message) => {
-        const from = message.key.remoteJid;
-        const whatsappNumber = from.replace("@s.whatsapp.net", "");
+        const chatId = message.key.remoteJid;
+        const sender = getSender(message);
+        const whatsappNumber = sender.replace("@s.whatsapp.net", "");
 
         try {
             const user = await getUserByWhatsapp(whatsappNumber);
             if (!user) {
-                return sock.sendMessage(from, { text: "⚠️ Kamu belum terdaftar." });
+                return sock.sendMessage(chatId, { text: "⚠️ Kamu belum terdaftar." });
             }
 
             const transactions = await prisma.transaction.findMany({
@@ -22,7 +23,7 @@ export default {
             });
 
             if (transactions.length === 0) {
-                return sock.sendMessage(from, { text: "📭 Belum ada transaksi." });
+                return sock.sendMessage(chatId, { text: "📭 Belum ada transaksi." });
             }
 
             let msg = `╭── [ *RIWAYAT TRANSAKSI* ]
@@ -48,11 +49,10 @@ export default {
 
             msg += `╰ _Menampilkan 10 transaksi terakhir_`;
 
-            await sock.sendMessage(from, { text: msg });
-
+            await sock.sendMessage(chatId, { text: msg });
         } catch (error) {
             console.error("List Trx Error:", error);
-            await sock.sendMessage(from, { text: "❌ Gagal mengambil data transaksi." });
+            await sock.sendMessage(chatId, { text: "❌ Gagal mengambil data transaksi." });
         }
     },
 };
