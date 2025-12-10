@@ -70,9 +70,20 @@ export default {
                 data: categoryData
             });
 
-            await sock.sendMessage(from, {
-                text: `🎉 *SIAP DIMULAI!* 🎉\n\nHalo *${newUser.name}*, selamat datang di revolusi keuanganmu! 🚀\n\n🔑 *KODE AKSES RAHASIA:*\n👉 *${newUser.uniqueCode}* 👈\n\n_Gunakan kode ini untuk login di dashboard web kami. Jangan sampai hilang ya!_\n\nKetik *$help* untuk melihat apa saja yang bisa aku lakukan. Let's grow rich! 💸`,
-            });
+            const msg = `╭── [ *REGISTRASI BERHASIL* ]
+│
+├ 🎉 *Selamat Datang, ${newUser.name}!*
+│ Akun keuanganmu telah aktif.
+│
+├ 🔑 *KODE AKSES WEB*
+│ 👉 *${newUser.uniqueCode}*
+│ 🔗 *Login:* ${process.env.DASHBOARD_URL || "Hubungi Admin"}
+│ _(Simpan kode ini untuk login dashboard)_
+│
+╰ 💡 *Next Step:*
+  Ketik *$help* untuk melihat menu.`;
+
+            await sock.sendMessage(from, { text: msg });
 
         } catch (error) {
             console.error("Register Error:", error);

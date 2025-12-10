@@ -50,12 +50,15 @@ export default {
                 }
             }
 
-            let response = `✅ *BERHASIL MENAMBAH KATEGORI!* \n\n`;
-            response += `➕ Ditambahkan: ${addedCount}\n`;
+            let response = `╭── [ *TAMBAH KATEGORI* ]
+│
+├ ✅ *Sukses:* ${addedCount} ditambahkan
+`;
             if (skipped.length > 0) {
-                response += `⚠️ Terlewati (sudah ada): ${skipped.join(", ")}\n`;
+                response += `├ ⚠️ *Skip:* ${skipped.join(", ")}\n`;
             }
-            response += `\n_Cek daftar kategori dengan $list-cat_`;
+            response += `│
+╰ _Cek list: $list-cat_`;
 
             await sock.sendMessage(from, { text: response });
 

@@ -51,7 +51,12 @@ export default {
             });
 
             await sock.sendMessage(from, {
-                text: `✏️ *KATEGORI DIUPDATE* ✏️\n\n'${oldName}' ➡️ '${newName}'\n\n_List update: $list-cat_`
+                text: `╭── [ *EDIT KATEGORI* ]
+│
+├ ✏️ *Dari:* ${oldName}
+├ ➡️ *Jadi:* ${newName}
+│
+╰ _Cek list: $list-cat_`
             });
 
         } catch (error) {

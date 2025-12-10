@@ -19,6 +19,9 @@ export default {
                 return sock.sendMessage(from, { text: "⚠️ Berikan instruksi. Contoh: $cat Tambah Gaji dan hapus Rokok" });
             }
 
+            // React Processing
+            await sock.sendMessage(from, { react: { text: "⏳", key: message.key } });
+
             // 1. Get current categories
             const currentCats = await prisma.category.findMany({
                 where: { userId: user.id },
@@ -107,13 +110,22 @@ export default {
             }
 
             // 4. Respond
-            let finalMsg = `🤖 *AI CATEGORY MANAGER* 🤖\n\n`;
-            finalMsg += `"${parsed.summary}"\n\n`;
-            finalMsg += `📜 *Log Aksi:*\n`;
-            finalMsg += results.join("\n");
-            finalMsg += `\n\n_Cek hasil: $list-cat_`;
+            let finalMsg = `╭── [ *AI MANAGER* ]
+│
+├ 🤖 "${parsed.summary}"
+│
+├ 📜 *LOG AKSI*
+`;
+            results.forEach(res => {
+                finalMsg += `├ ${res}\n`;
+            });
+            finalMsg += `│
+╰ _Cek hasil: $list-cat_`;
 
             await sock.sendMessage(from, { text: finalMsg });
+
+            // React Success
+            await sock.sendMessage(from, { react: { text: "✅", key: message.key } });
 
         } catch (error) {
             console.error("AI Cat Error:", error);

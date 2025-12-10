@@ -32,7 +32,12 @@ export default {
 
             if (result.count > 0) {
                 await sock.sendMessage(from, {
-                    text: `🗑️ *${result.count} Kategori Telah Dihapus* 🗑️\n\nItem: ${catNames.join(", ")}\n\n_List kategori update: $list-cat_`
+                    text: `╭── [ *HAPUS KATEGORI* ]
+│
+├ 🗑️ *Dihapus:* ${result.count} item
+├ 📋 *List:* ${catNames.join(", ")}
+│
+╰ _Cek list: $list-cat_`
                 });
             } else {
                 await sock.sendMessage(from, { text: "⚠️ Tidak ada kategori yang ditemukan untuk dihapus." });

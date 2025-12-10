@@ -10,24 +10,31 @@ export default {
 
         try {
             const user = await getUserByWhatsapp(whatsappNumber);
+            console.log(`[DEBUG] List-Cat User:`, user);
+
             if (!user) {
                 return sock.sendMessage(from, { text: "⚠️ Kamu belum terdaftar. Ketik $register <nama> dulu ya!" });
             }
 
+            console.log(`[DEBUG] Fetching categories for UserID: ${user.id}`);
             const categories = await prisma.category.findMany({
                 where: { userId: user.id },
                 orderBy: { name: "asc" },
             });
+            console.log(`[DEBUG] Categories found: ${categories.length}`);
 
             if (categories.length === 0) {
                 return sock.sendMessage(from, { text: "📂 Belum ada kategori tersimpan. Yuk tambah pakai $add-cat!" });
             }
 
-            let response = `📂 *DAFTAR KATEGORI KEUANGANMU* 📂\n\n`;
+            let response = `╭── [ *DAFTAR KATEGORI* ]
+│
+`;
             categories.forEach((cat, index) => {
-                response += `${index + 1}. ${cat.name}\n`;
+                response += `├ ${index + 1}. ${cat.name}\n`;
             });
-            response += `\n_Total: ${categories.length} kategori_`;
+            response += `│
+╰ _Total: ${categories.length} Kategori_`;
 
             await sock.sendMessage(from, { text: response });
 
