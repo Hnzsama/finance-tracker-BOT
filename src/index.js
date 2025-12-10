@@ -1,6 +1,5 @@
 import { createRequire } from "module";
 import { useMultiFileAuthState, fetchLatestBaileysVersion, makeWASocket, DisconnectReason } from "@whiskeysockets/baileys";
-import { prisma } from "./utils/prisma.js";
 const require = createRequire(import.meta.url);
 const qrcode = require("qrcode-terminal");
 
