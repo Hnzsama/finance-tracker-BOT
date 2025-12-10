@@ -1,23 +1,27 @@
 import { prisma } from "../../utils/prisma.js";
-import { getUserByWhatsapp } from "../../utils/user.js";
+import { getUserByWhatsapp, getSender } from "../../utils/user.js";
 
 export default {
     name: "smart-cat",
     matches: (text) => text.startsWith("$cat"),
     execute: async (sock, message, text, { gemini }) => {
-        const from = message.key.remoteJid;
-        const whatsappNumber = from.replace("@s.whatsapp.net", "");
+        const chatId = message.key.remoteJid;
+        const sender = getSender(message);
+        const whatsappNumber = sender.replace("@s.whatsapp.net", "");
 
         try {
             const user = await getUserByWhatsapp(whatsappNumber);
             if (!user) {
-                return sock.sendMessage(from, { text: "⚠️ Kamu belum terdaftar. Ketik $register <nama> dulu ya!" });
+                return sock.sendMessage(chatId, { text: "⚠️ Kamu belum terdaftar. Ketik $register <nama> dulu ya!" });
             }
 
             const instruction = text.replace("$cat", "").trim();
             if (!instruction) {
-                return sock.sendMessage(from, { text: "⚠️ Berikan instruksi. Contoh: $cat Tambah Gaji dan hapus Rokok" });
+                return sock.sendMessage(chatId, { text: "⚠️ Berikan instruksi. Contoh: $cat Tambah Gaji dan hapus Rokok" });
             }
+
+            // React Processing
+            await sock.sendMessage(chatId, { react: { text: "⏳", key: message.key } });
 
             // 1. Get current categories
             const currentCats = await prisma.category.findMany({
@@ -62,7 +66,7 @@ export default {
                 parsed = JSON.parse(responseText);
             } catch (e) {
                 console.error("AI Parse Error:", responseText);
-                return sock.sendMessage(from, { text: "⚠️ Maaf, aku bingung sama instruksinya." });
+                return sock.sendMessage(chatId, { text: "⚠️ Maaf, aku bingung sama instruksinya." });
             }
 
             // 3. Execute Actions
@@ -107,17 +111,26 @@ export default {
             }
 
             // 4. Respond
-            let finalMsg = `🤖 *AI CATEGORY MANAGER* 🤖\n\n`;
-            finalMsg += `"${parsed.summary}"\n\n`;
-            finalMsg += `📜 *Log Aksi:*\n`;
-            finalMsg += results.join("\n");
-            finalMsg += `\n\n_Cek hasil: $list-cat_`;
+            let finalMsg = `╭── [ *AI MANAGER* ]
+│
+├ 🤖 "${parsed.summary}"
+│
+├ 📜 *LOG AKSI*
+`;
+            results.forEach(res => {
+                finalMsg += `├ ${res}\n`;
+            });
+            finalMsg += `│
+╰ _Cek hasil: $list-cat_`;
 
-            await sock.sendMessage(from, { text: finalMsg });
+            await sock.sendMessage(chatId, { text: finalMsg });
+
+            // React Success
+            await sock.sendMessage(chatId, { react: { text: "✅", key: message.key } });
 
         } catch (error) {
             console.error("AI Cat Error:", error);
-            await sock.sendMessage(from, { text: "❌ Terjadi kesalahan sistem." });
+            await sock.sendMessage(chatId, { text: "❌ Terjadi kesalahan sistem." });
         }
     },
 };

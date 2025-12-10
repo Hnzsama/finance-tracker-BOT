@@ -80,11 +80,20 @@ async function startSock() {
   sock.ev.on("messages.upsert", async ({ messages }) => {
     for (const msg of messages) {
       if (!msg.message || msg.key.fromMe) continue;
-      const from = msg.key.remoteJid;
+
+      // FIX: Handle LID (Linked Identity)
+      // If msg.key.remoteJid is LID, try to use remoteJidAlt which contains the real number.
+      let from = msg.key.remoteJid;
+      // @ts-ignore
+      if (from.includes("@lid") && msg.key.remoteJidAlt) {
+        // @ts-ignore
+        from = msg.key.remoteJidAlt;
+      }
+
       let text = "";
       if (msg.message.conversation) text = msg.message.conversation;
-      else if (msg.message.extendedTextMessage)
-        text = msg.message.extendedTextMessage.text;
+      else if (msg.message.extendedTextMessage) text = msg.message.extendedTextMessage.text;
+      else if (msg.message.imageMessage?.caption) text = msg.message.imageMessage.caption;
 
       // Log semua pesan yang diterima
       console.log(`[DEBUG] Pesan masuk dari ${from}:`, text);

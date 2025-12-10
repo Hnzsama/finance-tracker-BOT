@@ -1,4 +1,5 @@
 import { prisma } from "../../utils/prisma.js";
+import { getSender } from "../../utils/user.js";
 
 function generateUniqueCode() {
     return Math.floor(100000 + Math.random() * 900000).toString();
@@ -8,24 +9,25 @@ export default {
     name: "register",
     matches: (text) => text.startsWith("$register"),
     execute: async (sock, message, text) => {
-        const from = message.key.remoteJid;
-        const isGroup = from.endsWith("@g.us");
+        const chatId = message.key.remoteJid;
+        const sender = getSender(message);
+        const isGroup = chatId.endsWith("@g.us");
 
         // Hanya untuk private chat
         if (isGroup) {
             // Optional: reply that it only works in private
-            // await sock.sendMessage(from, { text: "Perintah ini hanya bisa digunakan di chat pribadi." });
+            // await sock.sendMessage(chatId, { text: "Perintah ini hanya bisa digunakan di chat pribadi." });
             return;
         }
 
         const name = text.replace("$register", "").trim();
         if (!name) {
-            await sock.sendMessage(from, { text: "Format salah. Gunakan: $register <nama>" });
+            await sock.sendMessage(chatId, { text: "Format salah. Gunakan: $register <nama>" });
             return;
         }
 
         // Extract nomor WA (remove @s.whatsapp.net)
-        const whatsappNumber = from.replace("@s.whatsapp.net", "");
+        const whatsappNumber = sender.replace("@s.whatsapp.net", "");
 
         try {
             // Check if user already exists
@@ -34,7 +36,7 @@ export default {
             });
 
             if (existingUser) {
-                await sock.sendMessage(from, {
+                await sock.sendMessage(chatId, {
                     text: `⚠️ *OOPS!* Kamu sudah terdaftar.\n\n👤 *Nama:* ${existingUser.name}\n🔑 *Kode Akses:* ${existingUser.uniqueCode}\n\n_Butuh bantuan? Ketik $help_`
                 });
                 return;
@@ -70,13 +72,24 @@ export default {
                 data: categoryData
             });
 
-            await sock.sendMessage(from, {
-                text: `🎉 *SIAP DIMULAI!* 🎉\n\nHalo *${newUser.name}*, selamat datang di revolusi keuanganmu! 🚀\n\n🔑 *KODE AKSES RAHASIA:*\n👉 *${newUser.uniqueCode}* 👈\n\n_Gunakan kode ini untuk login di dashboard web kami. Jangan sampai hilang ya!_\n\nKetik *$help* untuk melihat apa saja yang bisa aku lakukan. Let's grow rich! 💸`,
-            });
+            const msg = `╭── [ *REGISTRASI BERHASIL* ]
+│
+├ 🎉 *Selamat Datang, ${newUser.name}!*
+│ Akun keuanganmu telah aktif.
+│
+├ 🔑 *KODE AKSES WEB*
+│ 👉 *${newUser.uniqueCode}*
+│ 🔗 *Login:* ${process.env.DASHBOARD_URL || "Hubungi Admin"}
+│ _(Simpan kode ini untuk login dashboard)_
+│
+╰ 💡 *Next Step:*
+  Ketik *$help* untuk melihat menu.`;
+
+            await sock.sendMessage(chatId, { text: msg });
 
         } catch (error) {
             console.error("Register Error:", error);
-            await sock.sendMessage(from, { text: "❌ *ERROR TERSISTEM*\n\nTerjadi kesalahan saat mendaftar. Silakan coba lagi nanti." });
+            await sock.sendMessage(chatId, { text: "❌ *ERROR TERSISTEM*\n\nTerjadi kesalahan saat mendaftar. Silakan coba lagi nanti." });
         }
     },
 };

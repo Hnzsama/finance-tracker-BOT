@@ -10,3 +10,18 @@ export async function getUserByWhatsapp(whatsappNumber) {
         where: { whatsappNumber },
     });
 }
+
+/**
+ * Get normalized sender JID (handles LID)
+ * @param {import("@whiskeysockets/baileys").proto.IWebMessageInfo} msg 
+ * @returns {string}
+ */
+export function getSender(msg) {
+    let jid = msg.key.remoteJid;
+    // @ts-ignore
+    if (jid?.includes("@lid") && msg.key.remoteJidAlt) {
+        // @ts-ignore
+        jid = msg.key.remoteJidAlt;
+    }
+    return jid || "";
+}
