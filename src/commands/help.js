@@ -100,8 +100,10 @@ _Ketik_ \`$help\` _untuk kembali ke menu utama._`;
 │ Catat Tabungan (Savings).
 │ Contoh: _"$save 100rb Haji"_
 │
-╰ \`$list-trx\`
-  Lihat 10 transaksi terakhir.
+├ \`$list-trx [Filter]\`
+│ Lihat riwayat transaksi.
+│ Filter: _income, expense, debt, saving_
+│ Contoh: _"$list-trx expense"_
 
 _Ketik_ \`$help\` _untuk kembali ke menu utama._`;
       return await sock.sendMessage(chatId, { text: msg });
